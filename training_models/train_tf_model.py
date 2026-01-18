@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 import tensorflow as tf
-import keras_tuner as kt  # Импортируем тюнер
+import keras_tuner as kt
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
 import os
@@ -53,8 +53,9 @@ def train_evaluate(X_train, X_test, y_train, y_test):
     tuner = kt.Hyperband(
         lambda hp: build_model(hp, X_train),
         objective='val_loss',
-        max_epochs=20,
+        max_epochs=15,
         factor=3,
+        hyperband_iterations=1,
         directory='models/kt_dir',
         project_name='music_popularity'
     )
@@ -63,9 +64,10 @@ def train_evaluate(X_train, X_test, y_train, y_test):
 
     tuner.search(
         np.array(X_train), np.array(y_train),
-        epochs=20,
+        epochs=15,
         validation_split=0.2,
         callbacks=[stop_early],
+        batch_size=256,
         verbose=1
     )
 
@@ -76,7 +78,7 @@ def train_evaluate(X_train, X_test, y_train, y_test):
     history = model.fit(
         np.array(X_train), np.array(y_train),
         epochs=50,
-        batch_size=64,
+        batch_size=128,
         validation_split=0.2,
         callbacks=[
             tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=10, restore_best_weights=True)
@@ -114,9 +116,9 @@ def train_evaluate(X_train, X_test, y_train, y_test):
     return model
 
 def main():
-    X_train, X_test, y_train, y_test = load_data('models/train_data.csv')
+    X_train, X_test, y_train, y_test = load_data('../models/train_data.csv')
     model = train_evaluate(X_train, X_test, y_train, y_test)
-    model.save('models/tf_model.keras')
+    model.save('../models/tf_model.keras')
 
 if __name__ == "__main__":
     main()
